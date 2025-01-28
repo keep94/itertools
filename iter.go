@@ -4,7 +4,6 @@ package itertools
 import (
 	"iter"
 	"slices"
-	"sync"
 )
 
 // Pair represents a pair of values.
@@ -34,27 +33,19 @@ func PairUp[F, S any](s iter.Seq2[F, S]) iter.Seq[Pair[F, S]] {
 // Zip works like zip in python.
 func Zip[F, S any](first iter.Seq[F], second iter.Seq[S]) iter.Seq2[F, S] {
 	return func(yield func(F, S) bool) {
-		z := &zipper[F, S]{
-			fc:   make(chan F),
-			sc:   make(chan S),
-			fadv: make(chan bool),
-			sadv: make(chan bool),
+		firstPull, firstStop := iter.Pull(first)
+		defer firstStop()
+		secondPull, secondStop := iter.Pull(second)
+		defer secondStop()
+		firstValue, firstOk := firstPull()
+		secondValue, secondOk := secondPull()
+		for firstOk && secondOk {
+			if !yield(firstValue, secondValue) {
+				return
+			}
+			firstValue, firstOk = firstPull()
+			secondValue, secondOk = secondPull()
 		}
-		var wg sync.WaitGroup
-		wg.Add(1)
-		go func() {
-			first(z.firstYield)
-			close(z.fc)
-			wg.Done()
-		}()
-		wg.Add(1)
-		go func() {
-			second(z.secondYield)
-			close(z.sc)
-			wg.Done()
-		}()
-		z.iterate(yield)
-		wg.Wait()
 	}
 }
 
@@ -113,48 +104,4 @@ func Map[T, U any](seq iter.Seq[T], m Mapper[T, U]) iter.Seq[U] {
 			}
 		}
 	}
-}
-
-type zipper[F, S any] struct {
-	fc   chan F
-	sc   chan S
-	fadv chan bool
-	sadv chan bool
-}
-
-func (z *zipper[F, S]) firstYield(first F) bool {
-	select {
-	case <-z.fadv:
-		return false
-	default:
-		z.fc <- first
-		return <-z.fadv
-	}
-}
-
-func (z *zipper[F, S]) secondYield(second S) bool {
-	select {
-	case <-z.sadv:
-		return false
-	default:
-		z.sc <- second
-		return <-z.sadv
-	}
-}
-
-func (z *zipper[F, S]) iterate(yield func(F, S) bool) {
-	for {
-		first, fok := <-z.fc
-		second, sok := <-z.sc
-		if !fok || !sok {
-			break
-		}
-		if !yield(first, second) {
-			break
-		}
-		z.fadv <- true
-		z.sadv <- true
-	}
-	close(z.fadv)
-	close(z.sadv)
 }
