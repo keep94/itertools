@@ -7,6 +7,19 @@ import (
 	"github.com/keep94/itertools"
 )
 
+func ExampleEnumerate() {
+	notesIter := slices.Values([]string{"do", "re", "mi", "fa", "so"})
+	for i, n := range itertools.Enumerate(notesIter) {
+		fmt.Println(i, n)
+	}
+	// Output:
+	// 0 do
+	// 1 re
+	// 2 mi
+	// 3 fa
+	// 4 so
+}
+
 func ExampleZip() {
 	notesIter := slices.Values([]string{"do", "re", "mi", "fa", "so"})
 	ordinalsIter := slices.Values([]int{1, 2, 3})

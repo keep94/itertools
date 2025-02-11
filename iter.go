@@ -51,11 +51,11 @@ func Zip[F, S any](first iter.Seq[F], second iter.Seq[S]) iter.Seq2[F, S] {
 
 // Cycle returns values repeating in an infinite cycle.
 func Cycle[T any](values ...T) iter.Seq[T] {
-	if len(values) == 0 {
-		panic("values must be non-empty")
-	}
 	valueCopy := slices.Clone(values)
 	return func(yield func(T) bool) {
+		if len(valueCopy) == 0 {
+			return
+		}
 		for {
 			for _, v := range valueCopy {
 				if !yield(v) {
@@ -66,7 +66,7 @@ func Cycle[T any](values ...T) iter.Seq[T] {
 	}
 }
 
-// Flatten flattens the passed in iter.Seq[T] into a single iter.Seq[T]
+// Flatten flattens the passed in iterators into a single iterator.
 func Flatten[T any](iterators ...iter.Seq[T]) iter.Seq[T] {
 	iteratorCopy := slices.Clone(iterators)
 	return func(yield func(T) bool) {
@@ -102,6 +102,34 @@ func Map[T, U any](seq iter.Seq[T], m Mapper[T, U]) iter.Seq[U] {
 			if !yield(m(x)) {
 				return
 			}
+		}
+	}
+}
+
+// Count returns start, start + step, start + 2*step, ...
+func Count(start, step int) iter.Seq[int] {
+	if start == 0 && step == 1 {
+		return simpleCount
+	}
+	return func(yield func(int) bool) {
+		for i := start; ; i += step {
+			if !yield(i) {
+				return
+			}
+		}
+	}
+}
+
+// Enumerate works like enumerate in python. It is equivalent to
+// Zip(Count(0, 1), seq)
+func Enumerate[T any](seq iter.Seq[T]) iter.Seq2[int, T] {
+	return Zip(Count(0, 1), seq)
+}
+
+func simpleCount(yield func(int) bool) {
+	for i := 0; ; i++ {
+		if !yield(i) {
+			return
 		}
 	}
 }

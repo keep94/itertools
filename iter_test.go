@@ -8,8 +8,26 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCyclePanic(t *testing.T) {
-	assert.Panics(t, func() { Cycle[int]() })
+func TestCycleEmpty(t *testing.T) {
+	seq := Cycle[int]()
+	for range seq {
+		assert.FailNow(t, "Cycle should return empty sequence.")
+	}
+}
+
+func TestFlattenCycle(t *testing.T) {
+	startSeq := slices.Values([]int{1, 3, 5})
+	seq := Flatten(startSeq, Cycle(2, 4))
+	assert.Equal(t, []int{1, 3, 5, 2, 4, 2, 4}, firstNOf(seq, 7))
+	assert.Equal(t, []int{1, 3}, firstNOf(seq, 2))
+	assert.Equal(t, []int{1, 3, 5, 2, 4, 2, 4, 2}, firstNOf(seq, 8))
+}
+
+func TestFlattenEmpty(t *testing.T) {
+	seq := Flatten[int]()
+	for range seq {
+		assert.FailNow(t, "Flatten should return empty sequence.")
+	}
 }
 
 func TestMap(t *testing.T) {
@@ -124,11 +142,34 @@ func TestZipMisbehaved(t *testing.T) {
 	assert.Equal(t, 4, prod)
 }
 
+func TestCount(t *testing.T) {
+	seq := Count(0, 1)
+	assert.Equal(t, []int{0, 1, 2}, firstNOf(seq, 3))
+	assert.Equal(t, []int{0, 1, 2, 3}, firstNOf(seq, 4))
+}
+
+func TestCount1(t *testing.T) {
+	seq := Count(3, 5)
+	assert.Equal(t, []int{3, 8, 13}, firstNOf(seq, 3))
+	assert.Equal(t, []int{3, 8, 13, 18}, firstNOf(seq, 4))
+}
+
 func firstOf[T any](seq iter.Seq[T]) T {
 	var result T
 	for x := range seq {
 		result = x
 		break
+	}
+	return result
+}
+
+func firstNOf[T any](seq iter.Seq[T], n int) []T {
+	var result []T
+	for x := range seq {
+		result = append(result, x)
+		if len(result) == n {
+			break
+		}
 	}
 	return result
 }
