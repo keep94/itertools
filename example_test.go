@@ -48,3 +48,15 @@ func ExampleFlatten() {
 	// fa 0
 	// so 0
 }
+
+func ExampleTakeWhile() {
+	seq := itertools.Cycle(1, 2, 3, 4, 5)
+	f := func(x int) bool { return x < 4 }
+	for x := range itertools.TakeWhile(seq, f) {
+		fmt.Println(x)
+	}
+	// Output:
+	// 1
+	// 2
+	// 3
+}

@@ -51,11 +51,11 @@ func Zip[F, S any](first iter.Seq[F], second iter.Seq[S]) iter.Seq2[F, S] {
 
 // Cycle returns values repeating in an infinite cycle.
 func Cycle[T any](values ...T) iter.Seq[T] {
+	if len(values) == 0 {
+		return empty[T]
+	}
 	valueCopy := slices.Clone(values)
 	return func(yield func(T) bool) {
-		if len(valueCopy) == 0 {
-			return
-		}
 		for {
 			for _, v := range valueCopy {
 				if !yield(v) {
@@ -85,10 +85,7 @@ func Flatten[T any](iterators ...iter.Seq[T]) iter.Seq[T] {
 func Filter[T any](seq iter.Seq[T], f Filterer[T]) iter.Seq[T] {
 	return func(yield func(T) bool) {
 		for x := range seq {
-			if !f(x) {
-				continue
-			}
-			if !yield(x) {
+			if f(x) && !yield(x) {
 				return
 			}
 		}
@@ -126,10 +123,41 @@ func Enumerate[T any](seq iter.Seq[T]) iter.Seq2[int, T] {
 	return Zip(Count(0, 1), seq)
 }
 
+// Take returns the first n elements of seq.
+func Take[T any](seq iter.Seq[T], n int) iter.Seq[T] {
+	if n <= 0 {
+		return empty[T]
+	}
+	return func(yield func(T) bool) {
+		count := 0
+		for x := range seq {
+			count++
+			if !yield(x) || count == n {
+				return
+			}
+		}
+	}
+}
+
+// TakeWhile returns the first elements of seq for which f returns true.
+func TakeWhile[T any](seq iter.Seq[T], f Filterer[T]) iter.Seq[T] {
+	return func(yield func(T) bool) {
+		for x := range seq {
+			if !f(x) || !yield(x) {
+				return
+			}
+		}
+	}
+}
+
 func simpleCount(yield func(int) bool) {
 	for i := 0; ; i++ {
 		if !yield(i) {
 			return
 		}
 	}
+}
+
+func empty[T any](yield func(T) bool) {
+	return
 }

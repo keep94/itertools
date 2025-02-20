@@ -154,6 +154,41 @@ func TestCount1(t *testing.T) {
 	assert.Equal(t, []int{3, 8, 13, 18}, firstNOf(seq, 4))
 }
 
+func TestTake(t *testing.T) {
+	seq := Count(10, 1)
+	assert.Empty(t, slices.Collect(Take(seq, -1)))
+	assert.Empty(t, slices.Collect(Take(seq, 0)))
+	assert.Equal(t, []int{10}, slices.Collect(Take(seq, 1)))
+	takeSeq := Take(seq, 3)
+	assert.Equal(t, []int{10, 11, 12}, slices.Collect(takeSeq))
+	assert.Equal(t, 10, firstOf(takeSeq))
+}
+
+func TestTakeFinite(t *testing.T) {
+	seq := slices.Values([]string{"abc", "123", "foo"})
+	takeSeq := Take(seq, 4)
+	assert.Equal(t, []string{"abc", "123", "foo"}, slices.Collect(takeSeq))
+	assert.Equal(t, "abc", firstOf(takeSeq))
+}
+
+func TestTakeWhile(t *testing.T) {
+	seq := Count(10, 1)
+	f := func(x int) bool { return x < 15 }
+	g := func(x int) bool { return x < 10 }
+	assert.Empty(t, slices.Collect(TakeWhile(seq, g)))
+	takeSeq := TakeWhile(seq, f)
+	assert.Equal(t, []int{10, 11, 12, 13, 14}, slices.Collect(takeSeq))
+	assert.Equal(t, 10, firstOf(takeSeq))
+}
+
+func TestTakeWhileFinite(t *testing.T) {
+	seq := slices.Values([]string{"abc", "123", "foo"})
+	f := func(s string) bool { return len(s) < 4 }
+	takeSeq := TakeWhile(seq, f)
+	assert.Equal(t, []string{"abc", "123", "foo"}, slices.Collect(takeSeq))
+	assert.Equal(t, "abc", firstOf(takeSeq))
+}
+
 func firstOf[T any](seq iter.Seq[T]) T {
 	var result T
 	for x := range seq {
