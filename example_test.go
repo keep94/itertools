@@ -32,11 +32,11 @@ func ExampleZip() {
 	// mi 3
 }
 
-func ExampleFlatten() {
+func ExampleChain() {
 	notes := []string{"do", "re", "mi", "fa", "so"}
 	ordinals := []int{1, 2, 3}
 	notesIter := slices.Values(notes)
-	ordinalsIter := itertools.Flatten(
+	ordinalsIter := itertools.Chain(
 		slices.Values(ordinals), itertools.Cycle(0))
 	for n, o := range itertools.Zip(notesIter, ordinalsIter) {
 		fmt.Println(n, o)

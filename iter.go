@@ -66,8 +66,15 @@ func Cycle[T any](values ...T) iter.Seq[T] {
 	}
 }
 
-// Flatten flattens the passed in iterators into a single iterator.
-func Flatten[T any](iterators ...iter.Seq[T]) iter.Seq[T] {
+// Chain returns all the elements in the first iterator followed by all the
+// elements in the second iterator etc.
+func Chain[T any](iterators ...iter.Seq[T]) iter.Seq[T] {
+	if len(iterators) == 0 {
+		return empty[T]
+	}
+	if len(iterators) == 1 {
+		return iterators[0]
+	}
 	iteratorCopy := slices.Clone(iterators)
 	return func(yield func(T) bool) {
 		for _, iterator := range iteratorCopy {

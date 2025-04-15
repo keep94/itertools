@@ -15,19 +15,27 @@ func TestCycleEmpty(t *testing.T) {
 	}
 }
 
-func TestFlattenCycle(t *testing.T) {
+func TestChainCycle(t *testing.T) {
 	startSeq := slices.Values([]int{1, 3, 5})
-	seq := Flatten(startSeq, Cycle(2, 4))
+	seq := Chain(startSeq, Cycle(2, 4))
 	assert.Equal(t, []int{1, 3, 5, 2, 4, 2, 4}, firstNOf(seq, 7))
 	assert.Equal(t, []int{1, 3}, firstNOf(seq, 2))
 	assert.Equal(t, []int{1, 3, 5, 2, 4, 2, 4, 2}, firstNOf(seq, 8))
 }
 
-func TestFlattenEmpty(t *testing.T) {
-	seq := Flatten[int]()
+func TestChainEmpty(t *testing.T) {
+	seq := Chain[int]()
 	for range seq {
-		assert.FailNow(t, "Flatten should return empty sequence.")
+		assert.FailNow(t, "Chain should return empty sequence.")
 	}
+}
+
+func TestChainSingle(t *testing.T) {
+	seq := Chain(slices.Values([]int{3, 5}))
+	assert.Equal(t, []int{3, 5}, firstNOf(seq, 3))
+	assert.Equal(t, []int{3, 5}, firstNOf(seq, 2))
+	assert.Equal(t, []int{3}, firstNOf(seq, 1))
+	assert.Equal(t, []int{3, 5}, firstNOf(seq, 0))
 }
 
 func TestMap(t *testing.T) {
