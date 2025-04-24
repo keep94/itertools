@@ -8,8 +8,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestCycleValuesEmpty(t *testing.T) {
+	seq := CycleValues[int]()
+	for range seq {
+		assert.FailNow(t, "CycleValues should return empty sequence.")
+	}
+}
+
+func TestChainCycleValues(t *testing.T) {
+	startSeq := slices.Values([]int{1, 3, 5})
+	seq := Chain(startSeq, CycleValues(2, 4))
+	assert.Equal(t, []int{1, 3, 5, 2, 4, 2, 4}, firstNOf(seq, 7))
+	assert.Equal(t, []int{1, 3}, firstNOf(seq, 2))
+	assert.Equal(t, []int{1, 3, 5, 2, 4, 2, 4, 2}, firstNOf(seq, 8))
+}
+
 func TestCycleEmpty(t *testing.T) {
-	seq := Cycle[int]()
+	seq := Cycle(slices.Values(([]int)(nil)))
 	for range seq {
 		assert.FailNow(t, "Cycle should return empty sequence.")
 	}
@@ -17,10 +32,13 @@ func TestCycleEmpty(t *testing.T) {
 
 func TestChainCycle(t *testing.T) {
 	startSeq := slices.Values([]int{1, 3, 5})
-	seq := Chain(startSeq, Cycle(2, 4))
-	assert.Equal(t, []int{1, 3, 5, 2, 4, 2, 4}, firstNOf(seq, 7))
+	seq := Chain(startSeq, Cycle(slices.Values([]int{2, 4})))
+	assert.Equal(t, []int{1, 3, 5, 2, 4, 2, 4, 2, 4}, firstNOf(seq, 9))
 	assert.Equal(t, []int{1, 3}, firstNOf(seq, 2))
-	assert.Equal(t, []int{1, 3, 5, 2, 4, 2, 4, 2}, firstNOf(seq, 8))
+	assert.Equal(t, []int{1, 3, 5}, firstNOf(seq, 3))
+	assert.Equal(t, []int{1, 3, 5, 2}, firstNOf(seq, 4))
+	assert.Equal(t, []int{1, 3, 5, 2, 4}, firstNOf(seq, 5))
+	assert.Equal(t, []int{1, 3, 5, 2, 4, 2}, firstNOf(seq, 6))
 }
 
 func TestChainEmpty(t *testing.T) {
@@ -223,7 +241,7 @@ func values(s []int) iter.Seq[int] {
 	return func(yield func(x int) bool) {
 		for i := range s {
 			if !yield(s[i]) {
-				break
+				return
 			}
 			s[i] = 0
 		}

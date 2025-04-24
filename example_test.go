@@ -37,7 +37,7 @@ func ExampleChain() {
 	ordinals := []int{1, 2, 3}
 	notesIter := slices.Values(notes)
 	ordinalsIter := itertools.Chain(
-		slices.Values(ordinals), itertools.Cycle(0))
+		slices.Values(ordinals), itertools.CycleValues(0))
 	for n, o := range itertools.Zip(notesIter, ordinalsIter) {
 		fmt.Println(n, o)
 	}
@@ -50,7 +50,7 @@ func ExampleChain() {
 }
 
 func ExampleTakeWhile() {
-	seq := itertools.Cycle(1, 2, 3, 4, 5)
+	seq := itertools.CycleValues(1, 2, 3, 4, 5)
 	f := func(x int) bool { return x < 4 }
 	for x := range itertools.TakeWhile(seq, f) {
 		fmt.Println(x)

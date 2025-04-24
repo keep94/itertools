@@ -19,9 +19,9 @@ type Filterer[T any] func(T) bool
 type Mapper[T, U any] func(T) U
 
 // PairUp converts an iter.Seq2 into an iter.Seq of pairs.
-func PairUp[F, S any](s iter.Seq2[F, S]) iter.Seq[Pair[F, S]] {
+func PairUp[F, S any](seq iter.Seq2[F, S]) iter.Seq[Pair[F, S]] {
 	return func(yield func(Pair[F, S]) bool) {
-		for first, second := range s {
+		for first, second := range seq {
 			p := Pair[F, S]{First: first, Second: second}
 			if !yield(p) {
 				return
@@ -49,36 +49,46 @@ func Zip[F, S any](first iter.Seq[F], second iter.Seq[S]) iter.Seq2[F, S] {
 	}
 }
 
-// Cycle returns values repeating in an infinite cycle.
-func Cycle[T any](values ...T) iter.Seq[T] {
+// CycleValues returns values repeating in an infinite cycle.
+func CycleValues[T any](values ...T) iter.Seq[T] {
 	if len(values) == 0 {
 		return empty[T]
 	}
-	valueCopy := slices.Clone(values)
+	valuesCopy := slices.Clone(values)
 	return func(yield func(T) bool) {
-		for {
-			for _, v := range valueCopy {
-				if !yield(v) {
-					return
-				}
+		yieldCycleValues(valuesCopy, yield)
+	}
+}
+
+// Cycle returns the values in seq repeating in an infinite cycle.
+func Cycle[T any](seq iter.Seq[T]) iter.Seq[T] {
+	return func(yield func(T) bool) {
+		var saved []T
+		for value := range seq {
+			if !yield(value) {
+				return
 			}
+			saved = append(saved, value)
+		}
+		if len(saved) > 0 {
+			yieldCycleValues(saved, yield)
 		}
 	}
 }
 
-// Chain returns all the elements in the first iterator followed by all the
-// elements in the second iterator etc.
-func Chain[T any](iterators ...iter.Seq[T]) iter.Seq[T] {
-	if len(iterators) == 0 {
+// Chain returns all the elements in the first sequence followed by all the
+// elements in the second sequence etc.
+func Chain[T any](sequences ...iter.Seq[T]) iter.Seq[T] {
+	if len(sequences) == 0 {
 		return empty[T]
 	}
-	if len(iterators) == 1 {
-		return iterators[0]
+	if len(sequences) == 1 {
+		return sequences[0]
 	}
-	iteratorCopy := slices.Clone(iterators)
+	sequencesCopy := slices.Clone(sequences)
 	return func(yield func(T) bool) {
-		for _, iterator := range iteratorCopy {
-			for v := range iterator {
+		for _, sequence := range sequencesCopy {
+			for v := range sequence {
 				if !yield(v) {
 					return
 				}
@@ -167,4 +177,14 @@ func simpleCount(yield func(int) bool) {
 
 func empty[T any](yield func(T) bool) {
 	return
+}
+
+func yieldCycleValues[T any](values []T, yield func(T) bool) {
+	for {
+		for _, v := range values {
+			if !yield(v) {
+				return
+			}
+		}
+	}
 }
