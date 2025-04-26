@@ -52,7 +52,7 @@ func ExampleChain() {
 func ExampleTakeWhile() {
 	seq := itertools.CycleValues(1, 2, 3, 4, 5)
 	f := func(x int) bool { return x < 4 }
-	for x := range itertools.TakeWhile(seq, f) {
+	for x := range itertools.TakeWhile(f, seq) {
 		fmt.Println(x)
 	}
 	// Output:

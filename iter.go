@@ -99,7 +99,7 @@ func Chain[T any](sequences ...iter.Seq[T]) iter.Seq[T] {
 
 // Filter returns an iter.Seq[T] that contains all the T values in seq for
 // which f returns true.
-func Filter[T any](seq iter.Seq[T], f Filterer[T]) iter.Seq[T] {
+func Filter[T any](f Filterer[T], seq iter.Seq[T]) iter.Seq[T] {
 	return func(yield func(T) bool) {
 		for x := range seq {
 			if f(x) && !yield(x) {
@@ -110,7 +110,7 @@ func Filter[T any](seq iter.Seq[T], f Filterer[T]) iter.Seq[T] {
 }
 
 // Map returns an iter.Seq[U] which is m applied to each element in seq.
-func Map[T, U any](seq iter.Seq[T], m Mapper[T, U]) iter.Seq[U] {
+func Map[T, U any](m Mapper[T, U], seq iter.Seq[T]) iter.Seq[U] {
 	return func(yield func(U) bool) {
 		for x := range seq {
 			if !yield(m(x)) {
@@ -141,7 +141,7 @@ func Enumerate[T any](seq iter.Seq[T]) iter.Seq2[int, T] {
 }
 
 // Take returns the first n elements of seq.
-func Take[T any](seq iter.Seq[T], n int) iter.Seq[T] {
+func Take[T any](n int, seq iter.Seq[T]) iter.Seq[T] {
 	if n <= 0 {
 		return empty[T]
 	}
@@ -157,7 +157,7 @@ func Take[T any](seq iter.Seq[T], n int) iter.Seq[T] {
 }
 
 // TakeWhile returns the first elements of seq for which f returns true.
-func TakeWhile[T any](seq iter.Seq[T], f Filterer[T]) iter.Seq[T] {
+func TakeWhile[T any](f Filterer[T], seq iter.Seq[T]) iter.Seq[T] {
 	return func(yield func(T) bool) {
 		for x := range seq {
 			if !f(x) || !yield(x) {

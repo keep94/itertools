@@ -59,7 +59,7 @@ func TestChainSingle(t *testing.T) {
 func TestMap(t *testing.T) {
 	y := []string{"four", "fives", "sixsix"}
 	m := func(s string) int { return len(s) }
-	it := Map(slices.Values(y), m)
+	it := Map(m, slices.Values(y))
 	assert.Equal(t, []int{4, 5, 6}, slices.Collect(it))
 	assert.Equal(t, 4, firstOf(it))
 }
@@ -67,7 +67,7 @@ func TestMap(t *testing.T) {
 func TestFilter(t *testing.T) {
 	x := []int{3, 4, 5, 6}
 	f := func(i int) bool { return i%2 == 1 }
-	it := Filter(slices.Values(x), f)
+	it := Filter(f, slices.Values(x))
 	assert.Equal(t, []int{3, 5}, slices.Collect(it))
 	assert.Equal(t, 3, firstOf(it))
 }
@@ -182,17 +182,17 @@ func TestCount1(t *testing.T) {
 
 func TestTake(t *testing.T) {
 	seq := Count(10, 1)
-	assert.Empty(t, slices.Collect(Take(seq, -1)))
-	assert.Empty(t, slices.Collect(Take(seq, 0)))
-	assert.Equal(t, []int{10}, slices.Collect(Take(seq, 1)))
-	takeSeq := Take(seq, 3)
+	assert.Empty(t, slices.Collect(Take(-1, seq)))
+	assert.Empty(t, slices.Collect(Take(0, seq)))
+	assert.Equal(t, []int{10}, slices.Collect(Take(1, seq)))
+	takeSeq := Take(3, seq)
 	assert.Equal(t, []int{10, 11, 12}, slices.Collect(takeSeq))
 	assert.Equal(t, 10, firstOf(takeSeq))
 }
 
 func TestTakeFinite(t *testing.T) {
 	seq := slices.Values([]string{"abc", "123", "foo"})
-	takeSeq := Take(seq, 4)
+	takeSeq := Take(4, seq)
 	assert.Equal(t, []string{"abc", "123", "foo"}, slices.Collect(takeSeq))
 	assert.Equal(t, "abc", firstOf(takeSeq))
 }
@@ -201,8 +201,8 @@ func TestTakeWhile(t *testing.T) {
 	seq := Count(10, 1)
 	f := func(x int) bool { return x < 15 }
 	g := func(x int) bool { return x < 10 }
-	assert.Empty(t, slices.Collect(TakeWhile(seq, g)))
-	takeSeq := TakeWhile(seq, f)
+	assert.Empty(t, slices.Collect(TakeWhile(g, seq)))
+	takeSeq := TakeWhile(f, seq)
 	assert.Equal(t, []int{10, 11, 12, 13, 14}, slices.Collect(takeSeq))
 	assert.Equal(t, 10, firstOf(takeSeq))
 }
@@ -210,7 +210,7 @@ func TestTakeWhile(t *testing.T) {
 func TestTakeWhileFinite(t *testing.T) {
 	seq := slices.Values([]string{"abc", "123", "foo"})
 	f := func(s string) bool { return len(s) < 4 }
-	takeSeq := TakeWhile(seq, f)
+	takeSeq := TakeWhile(f, seq)
 	assert.Equal(t, []string{"abc", "123", "foo"}, slices.Collect(takeSeq))
 	assert.Equal(t, "abc", firstOf(takeSeq))
 }
