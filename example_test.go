@@ -49,6 +49,35 @@ func ExampleChain() {
 	// so 0
 }
 
+func ExampleDropWhile() {
+	seq := slices.Values([]int{1, 2, 3, 4, 5, 1, 2, 3, 4, 5})
+	f := func(x int) bool { return x < 4 }
+	for x := range itertools.DropWhile(f, seq) {
+		fmt.Println(x)
+	}
+	// Output:
+	// 4
+	// 5
+	// 1
+	// 2
+	// 3
+	// 4
+	// 5
+}
+
+func ExampleAt() {
+	seq := slices.Values([]int{10, 13, 16})
+	fmt.Println(itertools.At(0, seq))
+	fmt.Println(itertools.At(1, seq))
+	fmt.Println(itertools.At(2, seq))
+	fmt.Println(itertools.At(3, seq))
+	// Output:
+	// 10 true
+	// 13 true
+	// 16 true
+	// 0 false
+}
+
 func ExampleTakeWhile() {
 	seq := itertools.CycleValues(1, 2, 3, 4, 5)
 	f := func(x int) bool { return x < 4 }

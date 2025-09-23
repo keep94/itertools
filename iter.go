@@ -140,6 +140,57 @@ func Enumerate[T any](seq iter.Seq[T]) iter.Seq2[int, T] {
 	return Zip(Count(0, 1), seq)
 }
 
+// At returns the 0-based indexth element of seq. At returns false if seq
+// has index or fewer elements or if index is negative.
+func At[T any](index int, seq iter.Seq[T]) (element T, ok bool) {
+	if index < 0 {
+		return
+	}
+	return First(Drop(index, seq))
+}
+
+// First returns the first element of seq or false if seq is empty.
+func First[T any](seq iter.Seq[T]) (first T, ok bool) {
+	for x := range seq {
+		first = x
+		ok = true
+		break
+	}
+	return
+}
+
+// Drop returns everything but the first n elements of seq.
+func Drop[T any](n int, seq iter.Seq[T]) iter.Seq[T] {
+	if n <= 0 {
+		return seq
+	}
+	return func(yield func(T) bool) {
+		count := 0
+		for x := range seq {
+			if count >= n && !yield(x) {
+				return
+			}
+			count++
+		}
+	}
+}
+
+// DropWhile returns everything but the first elements of seq for which f
+// returns true.
+func DropWhile[T any](f Filterer[T], seq iter.Seq[T]) iter.Seq[T] {
+	return func(yield func(T) bool) {
+		emit := false
+		for x := range seq {
+			if !f(x) {
+				emit = true
+			}
+			if emit && !yield(x) {
+				return
+			}
+		}
+	}
+}
+
 // Take returns the first n elements of seq.
 func Take[T any](n int, seq iter.Seq[T]) iter.Seq[T] {
 	if n <= 0 {
@@ -148,10 +199,10 @@ func Take[T any](n int, seq iter.Seq[T]) iter.Seq[T] {
 	return func(yield func(T) bool) {
 		count := 0
 		for x := range seq {
-			count++
-			if !yield(x) || count == n {
+			if count == n || !yield(x) {
 				return
 			}
+			count++
 		}
 	}
 }

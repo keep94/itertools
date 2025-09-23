@@ -18,9 +18,9 @@ func TestCycleValuesEmpty(t *testing.T) {
 func TestChainCycleValues(t *testing.T) {
 	startSeq := slices.Values([]int{1, 3, 5})
 	seq := Chain(startSeq, CycleValues(2, 4))
-	assert.Equal(t, []int{1, 3, 5, 2, 4, 2, 4}, firstNOf(seq, 7))
-	assert.Equal(t, []int{1, 3}, firstNOf(seq, 2))
-	assert.Equal(t, []int{1, 3, 5, 2, 4, 2, 4, 2}, firstNOf(seq, 8))
+	assert.Equal(t, []int{1, 3, 5, 2, 4, 2, 4}, firstNOf(7, seq))
+	assert.Equal(t, []int{1, 3}, firstNOf(2, seq))
+	assert.Equal(t, []int{1, 3, 5, 2, 4, 2, 4, 2}, firstNOf(8, seq))
 }
 
 func TestCycleEmpty(t *testing.T) {
@@ -33,12 +33,12 @@ func TestCycleEmpty(t *testing.T) {
 func TestChainCycle(t *testing.T) {
 	startSeq := slices.Values([]int{1, 3, 5})
 	seq := Chain(startSeq, Cycle(slices.Values([]int{2, 4})))
-	assert.Equal(t, []int{1, 3, 5, 2, 4, 2, 4, 2, 4}, firstNOf(seq, 9))
-	assert.Equal(t, []int{1, 3}, firstNOf(seq, 2))
-	assert.Equal(t, []int{1, 3, 5}, firstNOf(seq, 3))
-	assert.Equal(t, []int{1, 3, 5, 2}, firstNOf(seq, 4))
-	assert.Equal(t, []int{1, 3, 5, 2, 4}, firstNOf(seq, 5))
-	assert.Equal(t, []int{1, 3, 5, 2, 4, 2}, firstNOf(seq, 6))
+	assert.Equal(t, []int{1, 3, 5, 2, 4, 2, 4, 2, 4}, firstNOf(9, seq))
+	assert.Equal(t, []int{1, 3}, firstNOf(2, seq))
+	assert.Equal(t, []int{1, 3, 5}, firstNOf(3, seq))
+	assert.Equal(t, []int{1, 3, 5, 2}, firstNOf(4, seq))
+	assert.Equal(t, []int{1, 3, 5, 2, 4}, firstNOf(5, seq))
+	assert.Equal(t, []int{1, 3, 5, 2, 4, 2}, firstNOf(6, seq))
 }
 
 func TestChainEmpty(t *testing.T) {
@@ -50,10 +50,10 @@ func TestChainEmpty(t *testing.T) {
 
 func TestChainSingle(t *testing.T) {
 	seq := Chain(slices.Values([]int{3, 5}))
-	assert.Equal(t, []int{3, 5}, firstNOf(seq, 3))
-	assert.Equal(t, []int{3, 5}, firstNOf(seq, 2))
-	assert.Equal(t, []int{3}, firstNOf(seq, 1))
-	assert.Equal(t, []int{3, 5}, firstNOf(seq, 0))
+	assert.Equal(t, []int{3, 5}, firstNOf(3, seq))
+	assert.Equal(t, []int{3, 5}, firstNOf(2, seq))
+	assert.Equal(t, []int{3}, firstNOf(1, seq))
+	assert.Equal(t, []int{3, 5}, firstNOf(0, seq))
 }
 
 func TestMap(t *testing.T) {
@@ -170,14 +170,14 @@ func TestZipMisbehaved(t *testing.T) {
 
 func TestCount(t *testing.T) {
 	seq := Count(0, 1)
-	assert.Equal(t, []int{0, 1, 2}, firstNOf(seq, 3))
-	assert.Equal(t, []int{0, 1, 2, 3}, firstNOf(seq, 4))
+	assert.Equal(t, []int{0, 1, 2}, firstNOf(3, seq))
+	assert.Equal(t, []int{0, 1, 2, 3}, firstNOf(4, seq))
 }
 
 func TestCount1(t *testing.T) {
 	seq := Count(3, 5)
-	assert.Equal(t, []int{3, 8, 13}, firstNOf(seq, 3))
-	assert.Equal(t, []int{3, 8, 13, 18}, firstNOf(seq, 4))
+	assert.Equal(t, []int{3, 8, 13}, firstNOf(3, seq))
+	assert.Equal(t, []int{3, 8, 13, 18}, firstNOf(4, seq))
 }
 
 func TestTake(t *testing.T) {
@@ -198,7 +198,7 @@ func TestTakeFinite(t *testing.T) {
 }
 
 func TestTakeWhile(t *testing.T) {
-	seq := Count(10, 1)
+	seq := slices.Values([]int{10, 11, 12, 13, 14, 15, 1, 2, 3, 4})
 	f := func(x int) bool { return x < 15 }
 	g := func(x int) bool { return x < 10 }
 	assert.Empty(t, slices.Collect(TakeWhile(g, seq)))
@@ -215,24 +215,62 @@ func TestTakeWhileFinite(t *testing.T) {
 	assert.Equal(t, "abc", firstOf(takeSeq))
 }
 
+func TestDropWhile(t *testing.T) {
+	seq := slices.Values([]int{10, 13, 16, 1, 2, 3})
+	f := func(x int) bool { return x < 10 }
+	g := func(x int) bool { return x < 13 }
+	h := func(x int) bool { return x < 16 }
+	dropSeq := DropWhile(f, seq)
+	assert.Equal(t, []int{10, 13, 16, 1, 2, 3}, slices.Collect(dropSeq))
+	assert.Equal(t, 10, firstOf(dropSeq))
+	dropSeq = DropWhile(g, seq)
+	assert.Equal(t, []int{13, 16, 1, 2, 3}, slices.Collect(dropSeq))
+	assert.Equal(t, 13, firstOf(dropSeq))
+	dropSeq = DropWhile(h, seq)
+	assert.Equal(t, []int{16, 1, 2, 3}, slices.Collect(dropSeq))
+	assert.Equal(t, 16, firstOf(dropSeq))
+}
+
+func TestDropWhileFinite(t *testing.T) {
+	seq := slices.Values([]int{10, 13, 16})
+	f := func(x int) bool { return x < 19 }
+	dropSeq := DropWhile(f, seq)
+	assert.Empty(t, slices.Collect(dropSeq))
+	assert.Empty(t, slices.Collect(dropSeq))
+}
+
+func TestAt(t *testing.T) {
+	seq := slices.Values([]string{"a", "b", "c"})
+	val, ok := At(-1, seq)
+	assert.Equal(t, "", val)
+	assert.False(t, ok)
+	val, ok = At(0, seq)
+	assert.Equal(t, "a", val)
+	assert.True(t, ok)
+	val, ok = At(1, seq)
+	assert.Equal(t, "b", val)
+	assert.True(t, ok)
+	val, ok = At(2, seq)
+	assert.Equal(t, "c", val)
+	assert.True(t, ok)
+	val, ok = At(3, seq)
+	assert.Equal(t, "", val)
+	assert.False(t, ok)
+	val, ok = At(4, seq)
+	assert.Equal(t, "", val)
+	assert.False(t, ok)
+}
+
 func firstOf[T any](seq iter.Seq[T]) T {
-	var result T
-	for x := range seq {
-		result = x
-		break
-	}
+	result, _ := First(seq)
 	return result
 }
 
-func firstNOf[T any](seq iter.Seq[T], n int) []T {
-	var result []T
-	for x := range seq {
-		result = append(result, x)
-		if len(result) == n {
-			break
-		}
+func firstNOf[T any](n int, seq iter.Seq[T]) []T {
+	if n <= 0 {
+		return slices.Collect(seq)
 	}
-	return result
+	return slices.Collect(Take(n, seq))
 }
 
 // values returns an iter.Seq over s that also sets s elements to zero until
