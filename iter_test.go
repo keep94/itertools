@@ -181,38 +181,51 @@ func TestCount1(t *testing.T) {
 }
 
 func TestTake(t *testing.T) {
-	seq := Count(10, 1)
-	assert.Empty(t, slices.Collect(Take(-1, seq)))
-	assert.Empty(t, slices.Collect(Take(0, seq)))
-	assert.Equal(t, []int{10}, slices.Collect(Take(1, seq)))
-	takeSeq := Take(3, seq)
+	cc := newCountConsumed(Count(10, 1))
+	assert.Empty(t, slices.Collect(Take(-1, cc.All())))
+	assert.Equal(t, 0, cc.Count())
+	assert.Empty(t, slices.Collect(Take(0, cc.All())))
+	assert.Equal(t, 0, cc.Count())
+	assert.Equal(t, []int{10}, slices.Collect(Take(1, cc.All())))
+	assert.Equal(t, 1, cc.Count())
+	takeSeq := Take(3, cc.All())
 	assert.Equal(t, []int{10, 11, 12}, slices.Collect(takeSeq))
+	assert.Equal(t, 3, cc.Count())
 	assert.Equal(t, 10, firstOf(takeSeq))
+	assert.Equal(t, 1, cc.Count())
 }
 
 func TestTakeFinite(t *testing.T) {
-	seq := slices.Values([]string{"abc", "123", "foo"})
-	takeSeq := Take(4, seq)
+	cc := newCountConsumed(slices.Values([]string{"abc", "123", "foo"}))
+	takeSeq := Take(4, cc.All())
 	assert.Equal(t, []string{"abc", "123", "foo"}, slices.Collect(takeSeq))
+	assert.Equal(t, 3, cc.Count())
 	assert.Equal(t, "abc", firstOf(takeSeq))
+	assert.Equal(t, 1, cc.Count())
 }
 
 func TestTakeWhile(t *testing.T) {
-	seq := slices.Values([]int{10, 11, 12, 13, 14, 15, 1, 2, 3, 4})
+	cc := newCountConsumed(
+		slices.Values([]int{10, 11, 12, 13, 14, 15, 1, 2, 3, 4}))
 	f := func(x int) bool { return x < 15 }
 	g := func(x int) bool { return x < 10 }
-	assert.Empty(t, slices.Collect(TakeWhile(g, seq)))
-	takeSeq := TakeWhile(f, seq)
+	assert.Empty(t, slices.Collect(TakeWhile(g, cc.All())))
+	assert.Equal(t, 1, cc.Count())
+	takeSeq := TakeWhile(f, cc.All())
 	assert.Equal(t, []int{10, 11, 12, 13, 14}, slices.Collect(takeSeq))
+	assert.Equal(t, 6, cc.Count())
 	assert.Equal(t, 10, firstOf(takeSeq))
+	assert.Equal(t, 1, cc.Count())
 }
 
 func TestTakeWhileFinite(t *testing.T) {
-	seq := slices.Values([]string{"abc", "123", "foo"})
+	cc := newCountConsumed(slices.Values([]string{"abc", "123", "foo"}))
 	f := func(s string) bool { return len(s) < 4 }
-	takeSeq := TakeWhile(f, seq)
+	takeSeq := TakeWhile(f, cc.All())
 	assert.Equal(t, []string{"abc", "123", "foo"}, slices.Collect(takeSeq))
+	assert.Equal(t, 3, cc.Count())
 	assert.Equal(t, "abc", firstOf(takeSeq))
+	assert.Equal(t, 1, cc.Count())
 }
 
 func TestDropWhile(t *testing.T) {
@@ -240,25 +253,31 @@ func TestDropWhileFinite(t *testing.T) {
 }
 
 func TestAt(t *testing.T) {
-	seq := slices.Values([]string{"a", "b", "c"})
-	val, ok := At(-1, seq)
+	cc := newCountConsumed(slices.Values([]string{"a", "b", "c"}))
+	val, ok := At(-1, cc.All())
 	assert.Equal(t, "", val)
 	assert.False(t, ok)
-	val, ok = At(0, seq)
+	assert.Equal(t, 0, cc.Count())
+	val, ok = At(0, cc.All())
 	assert.Equal(t, "a", val)
 	assert.True(t, ok)
-	val, ok = At(1, seq)
+	assert.Equal(t, 1, cc.Count())
+	val, ok = At(1, cc.All())
 	assert.Equal(t, "b", val)
 	assert.True(t, ok)
-	val, ok = At(2, seq)
+	assert.Equal(t, 2, cc.Count())
+	val, ok = At(2, cc.All())
 	assert.Equal(t, "c", val)
 	assert.True(t, ok)
-	val, ok = At(3, seq)
+	assert.Equal(t, 3, cc.Count())
+	val, ok = At(3, cc.All())
 	assert.Equal(t, "", val)
 	assert.False(t, ok)
-	val, ok = At(4, seq)
+	assert.Equal(t, 3, cc.Count())
+	val, ok = At(4, cc.All())
 	assert.Equal(t, "", val)
 	assert.False(t, ok)
+	assert.Equal(t, 3, cc.Count())
 }
 
 func firstOf[T any](seq iter.Seq[T]) T {
@@ -292,6 +311,30 @@ func misbehaved(s []int) iter.Seq[int] {
 	return func(yield func(x int) bool) {
 		for i := range s {
 			yield(s[i])
+		}
+	}
+}
+
+type countConsumed[T any] struct {
+	delegate iter.Seq[T]
+	count    int
+}
+
+func newCountConsumed[T any](delegate iter.Seq[T]) *countConsumed[T] {
+	return &countConsumed[T]{delegate: delegate}
+}
+
+func (c *countConsumed[T]) Count() int { return c.count }
+
+func (c *countConsumed[T]) All() iter.Seq[T] {
+	c.count = 0
+	return func(yield func(T) bool) {
+		c.count = 0
+		for e := range c.delegate {
+			c.count++
+			if !yield(e) {
+				return
+			}
 		}
 	}
 }

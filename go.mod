@@ -9,3 +9,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+// Regression where Take consumes 1 extra value from its source iterator
+retract v0.7.0

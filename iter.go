@@ -199,10 +199,10 @@ func Take[T any](n int, seq iter.Seq[T]) iter.Seq[T] {
 	return func(yield func(T) bool) {
 		count := 0
 		for x := range seq {
-			if count == n || !yield(x) {
+			count++
+			if !yield(x) || count == n {
 				return
 			}
-			count++
 		}
 	}
 }
