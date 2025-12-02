@@ -181,7 +181,7 @@ func DropWhile[T any](f Filterer[T], seq iter.Seq[T]) iter.Seq[T] {
 	return func(yield func(T) bool) {
 		emit := false
 		for x := range seq {
-			if !f(x) {
+			if !emit && !f(x) {
 				emit = true
 			}
 			if emit && !yield(x) {
@@ -227,7 +227,6 @@ func simpleCount(yield func(int) bool) {
 }
 
 func empty[T any](yield func(T) bool) {
-	return
 }
 
 func yieldCycleValues[T any](values []T, yield func(T) bool) {

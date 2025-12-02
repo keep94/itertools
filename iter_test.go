@@ -244,6 +244,18 @@ func TestDropWhile(t *testing.T) {
 	assert.Equal(t, 16, firstOf(dropSeq))
 }
 
+func TestDropWhileCallFilterOnlyAtBeginning(t *testing.T) {
+	filterCallCount := 0
+	filter := func(x int) bool {
+		filterCallCount++
+		return x == 1
+	}
+	seq := slices.Values([]int{1, 2, 1, 1, 1})
+	dropSeq := DropWhile(filter, seq)
+	assert.Equal(t, []int{2, 1, 1, 1}, slices.Collect(dropSeq))
+	assert.Equal(t, 2, filterCallCount)
+}
+
 func TestDropWhileFinite(t *testing.T) {
 	seq := slices.Values([]int{10, 13, 16})
 	f := func(x int) bool { return x < 19 }
