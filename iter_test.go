@@ -61,7 +61,7 @@ func TestMap(t *testing.T) {
 	m := func(s string) int { return len(s) }
 	it := Map(m, slices.Values(y))
 	assert.Equal(t, []int{4, 5, 6}, slices.Collect(it))
-	assert.Equal(t, 4, firstOf(it))
+	assert.Equal(t, 4, MustFirst(it))
 }
 
 func TestFilter(t *testing.T) {
@@ -69,7 +69,7 @@ func TestFilter(t *testing.T) {
 	f := func(i int) bool { return i%2 == 1 }
 	it := Filter(f, slices.Values(x))
 	assert.Equal(t, []int{3, 5}, slices.Collect(it))
-	assert.Equal(t, 3, firstOf(it))
+	assert.Equal(t, 3, MustFirst(it))
 }
 
 func TestPairUp(t *testing.T) {
@@ -191,7 +191,7 @@ func TestTake(t *testing.T) {
 	takeSeq := Take(3, cc.Delegate())
 	assert.Equal(t, []int{10, 11, 12}, slices.Collect(takeSeq))
 	assert.Equal(t, 3, cc.NumConsumed())
-	assert.Equal(t, 10, firstOf(takeSeq))
+	assert.Equal(t, 10, MustFirst(takeSeq))
 	assert.Equal(t, 1, cc.NumConsumed())
 }
 
@@ -200,7 +200,7 @@ func TestTakeFinite(t *testing.T) {
 	takeSeq := Take(4, cc.Delegate())
 	assert.Equal(t, []string{"abc", "123", "foo"}, slices.Collect(takeSeq))
 	assert.Equal(t, 3, cc.NumConsumed())
-	assert.Equal(t, "abc", firstOf(takeSeq))
+	assert.Equal(t, "abc", MustFirst(takeSeq))
 	assert.Equal(t, 1, cc.NumConsumed())
 }
 
@@ -214,7 +214,7 @@ func TestTakeWhile(t *testing.T) {
 	takeSeq := TakeWhile(f, cc.Delegate())
 	assert.Equal(t, []int{10, 11, 12, 13, 14}, slices.Collect(takeSeq))
 	assert.Equal(t, 6, cc.NumConsumed())
-	assert.Equal(t, 10, firstOf(takeSeq))
+	assert.Equal(t, 10, MustFirst(takeSeq))
 	assert.Equal(t, 1, cc.NumConsumed())
 }
 
@@ -224,7 +224,7 @@ func TestTakeWhileFinite(t *testing.T) {
 	takeSeq := TakeWhile(f, cc.Delegate())
 	assert.Equal(t, []string{"abc", "123", "foo"}, slices.Collect(takeSeq))
 	assert.Equal(t, 3, cc.NumConsumed())
-	assert.Equal(t, "abc", firstOf(takeSeq))
+	assert.Equal(t, "abc", MustFirst(takeSeq))
 	assert.Equal(t, 1, cc.NumConsumed())
 }
 
@@ -235,13 +235,13 @@ func TestDropWhile(t *testing.T) {
 	h := func(x int) bool { return x < 16 }
 	dropSeq := DropWhile(f, seq)
 	assert.Equal(t, []int{10, 13, 16, 1, 2, 3}, slices.Collect(dropSeq))
-	assert.Equal(t, 10, firstOf(dropSeq))
+	assert.Equal(t, 10, MustFirst(dropSeq))
 	dropSeq = DropWhile(g, seq)
 	assert.Equal(t, []int{13, 16, 1, 2, 3}, slices.Collect(dropSeq))
-	assert.Equal(t, 13, firstOf(dropSeq))
+	assert.Equal(t, 13, MustFirst(dropSeq))
 	dropSeq = DropWhile(h, seq)
 	assert.Equal(t, []int{16, 1, 2, 3}, slices.Collect(dropSeq))
-	assert.Equal(t, 16, firstOf(dropSeq))
+	assert.Equal(t, 16, MustFirst(dropSeq))
 }
 
 func TestDropWhileCallFilterOnlyAtBeginning(t *testing.T) {
@@ -292,9 +292,30 @@ func TestAt(t *testing.T) {
 	assert.Equal(t, 3, cc.NumConsumed())
 }
 
-func firstOf[T any](seq iter.Seq[T]) T {
-	result, _ := First(seq)
-	return result
+func TestMustAt(t *testing.T) {
+	seq := slices.Values([]string{"a", "b", "c"})
+	assert.Equal(t, "a", MustAt(0, seq))
+	assert.Equal(t, "b", MustAt(1, seq))
+	assert.Equal(t, "c", MustAt(2, seq))
+	assert.Panics(t, func() { MustAt(-1, seq) })
+	assert.Panics(t, func() { MustAt(3, seq) })
+}
+
+func TestFirst(t *testing.T) {
+	seq := slices.Values([]string{"a"})
+	val, ok := First(seq)
+	assert.Equal(t, "a", val)
+	assert.True(t, ok)
+	emptySeq := Chain[string]()
+	_, ok = First(emptySeq)
+	assert.False(t, ok)
+}
+
+func TestMustFirst(t *testing.T) {
+	seq := slices.Values([]string{"a"})
+	assert.Equal(t, "a", MustFirst(seq))
+	emptySeq := Chain[string]()
+	assert.Panics(t, func() { MustFirst(emptySeq) })
 }
 
 func firstNOf[T any](n int, seq iter.Seq[T]) []T {

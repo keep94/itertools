@@ -149,6 +149,12 @@ func At[T any](index int, seq iter.Seq[T]) (element T, ok bool) {
 	return First(Drop(index, seq))
 }
 
+// MustAt works like At except that it panics if index is out of range
+// instead of returning false.
+func MustAt[T any](index int, seq iter.Seq[T]) T {
+	return must(At(index, seq))
+}
+
 // First returns the first element of seq or false if seq is empty.
 func First[T any](seq iter.Seq[T]) (first T, ok bool) {
 	for x := range seq {
@@ -157,6 +163,12 @@ func First[T any](seq iter.Seq[T]) (first T, ok bool) {
 		break
 	}
 	return
+}
+
+// MustFirst works like First except that it panics if seq is empty
+// instead of returning false.
+func MustFirst[T any](seq iter.Seq[T]) T {
+	return must(First(seq))
 }
 
 // Drop returns everything but the first n elements of seq.
@@ -237,4 +249,11 @@ func yieldCycleValues[T any](values []T, yield func(T) bool) {
 			}
 		}
 	}
+}
+
+func must[T any](result T, ok bool) T {
+	if !ok {
+		panic("No such element")
+	}
+	return result
 }
