@@ -181,51 +181,51 @@ func TestCount1(t *testing.T) {
 }
 
 func TestTake(t *testing.T) {
-	cc := newCountConsumed(Count(10, 1))
-	assert.Empty(t, slices.Collect(Take(-1, cc.Delegate())))
-	assert.Equal(t, 0, cc.NumConsumed())
-	assert.Empty(t, slices.Collect(Take(0, cc.Delegate())))
-	assert.Equal(t, 0, cc.NumConsumed())
-	assert.Equal(t, []int{10}, slices.Collect(Take(1, cc.Delegate())))
-	assert.Equal(t, 1, cc.NumConsumed())
-	takeSeq := Take(3, cc.Delegate())
+	capture := NewCapture(Count(10, 1))
+	assert.Empty(t, slices.Collect(Take(-1, capture.Values())))
+	assert.Equal(t, 0, capture.Count())
+	assert.Empty(t, slices.Collect(Take(0, capture.Values())))
+	assert.Equal(t, 0, capture.Count())
+	assert.Equal(t, []int{10}, slices.Collect(Take(1, capture.Values())))
+	assert.Equal(t, 1, capture.Count())
+	takeSeq := Take(3, capture.Values())
 	assert.Equal(t, []int{10, 11, 12}, slices.Collect(takeSeq))
-	assert.Equal(t, 3, cc.NumConsumed())
+	assert.Equal(t, 3, capture.Count())
 	assert.Equal(t, 10, MustFirst(takeSeq))
-	assert.Equal(t, 1, cc.NumConsumed())
+	assert.Equal(t, 1, capture.Count())
 }
 
 func TestTakeFinite(t *testing.T) {
-	cc := newCountConsumed(slices.Values([]string{"abc", "123", "foo"}))
-	takeSeq := Take(4, cc.Delegate())
+	capture := NewCapture(slices.Values([]string{"abc", "123", "foo"}))
+	takeSeq := Take(4, capture.Values())
 	assert.Equal(t, []string{"abc", "123", "foo"}, slices.Collect(takeSeq))
-	assert.Equal(t, 3, cc.NumConsumed())
+	assert.Equal(t, 3, capture.Count())
 	assert.Equal(t, "abc", MustFirst(takeSeq))
-	assert.Equal(t, 1, cc.NumConsumed())
+	assert.Equal(t, 1, capture.Count())
 }
 
 func TestTakeWhile(t *testing.T) {
-	cc := newCountConsumed(
+	capture := NewCapture(
 		slices.Values([]int{10, 11, 12, 13, 14, 15, 1, 2, 3, 4}))
 	f := func(x int) bool { return x < 15 }
 	g := func(x int) bool { return x < 10 }
-	assert.Empty(t, slices.Collect(TakeWhile(g, cc.Delegate())))
-	assert.Equal(t, 1, cc.NumConsumed())
-	takeSeq := TakeWhile(f, cc.Delegate())
+	assert.Empty(t, slices.Collect(TakeWhile(g, capture.Values())))
+	assert.Equal(t, 1, capture.Count())
+	takeSeq := TakeWhile(f, capture.Values())
 	assert.Equal(t, []int{10, 11, 12, 13, 14}, slices.Collect(takeSeq))
-	assert.Equal(t, 6, cc.NumConsumed())
+	assert.Equal(t, 6, capture.Count())
 	assert.Equal(t, 10, MustFirst(takeSeq))
-	assert.Equal(t, 1, cc.NumConsumed())
+	assert.Equal(t, 1, capture.Count())
 }
 
 func TestTakeWhileFinite(t *testing.T) {
-	cc := newCountConsumed(slices.Values([]string{"abc", "123", "foo"}))
+	capture := NewCapture(slices.Values([]string{"abc", "123", "foo"}))
 	f := func(s string) bool { return len(s) < 4 }
-	takeSeq := TakeWhile(f, cc.Delegate())
+	takeSeq := TakeWhile(f, capture.Values())
 	assert.Equal(t, []string{"abc", "123", "foo"}, slices.Collect(takeSeq))
-	assert.Equal(t, 3, cc.NumConsumed())
+	assert.Equal(t, 3, capture.Count())
 	assert.Equal(t, "abc", MustFirst(takeSeq))
-	assert.Equal(t, 1, cc.NumConsumed())
+	assert.Equal(t, 1, capture.Count())
 }
 
 func TestDropWhile(t *testing.T) {
@@ -265,31 +265,31 @@ func TestDropWhileFinite(t *testing.T) {
 }
 
 func TestAt(t *testing.T) {
-	cc := newCountConsumed(slices.Values([]string{"a", "b", "c"}))
-	val, ok := At(-1, cc.Delegate())
+	capture := NewCapture(slices.Values([]string{"a", "b", "c"}))
+	val, ok := At(-1, capture.Values())
 	assert.Equal(t, "", val)
 	assert.False(t, ok)
-	assert.Equal(t, 0, cc.NumConsumed())
-	val, ok = At(0, cc.Delegate())
+	assert.Equal(t, 0, capture.Count())
+	val, ok = At(0, capture.Values())
 	assert.Equal(t, "a", val)
 	assert.True(t, ok)
-	assert.Equal(t, 1, cc.NumConsumed())
-	val, ok = At(1, cc.Delegate())
+	assert.Equal(t, 1, capture.Count())
+	val, ok = At(1, capture.Values())
 	assert.Equal(t, "b", val)
 	assert.True(t, ok)
-	assert.Equal(t, 2, cc.NumConsumed())
-	val, ok = At(2, cc.Delegate())
+	assert.Equal(t, 2, capture.Count())
+	val, ok = At(2, capture.Values())
 	assert.Equal(t, "c", val)
 	assert.True(t, ok)
-	assert.Equal(t, 3, cc.NumConsumed())
-	val, ok = At(3, cc.Delegate())
+	assert.Equal(t, 3, capture.Count())
+	val, ok = At(3, capture.Values())
 	assert.Equal(t, "", val)
 	assert.False(t, ok)
-	assert.Equal(t, 3, cc.NumConsumed())
-	val, ok = At(4, cc.Delegate())
+	assert.Equal(t, 3, capture.Count())
+	val, ok = At(4, capture.Values())
 	assert.Equal(t, "", val)
 	assert.False(t, ok)
-	assert.Equal(t, 3, cc.NumConsumed())
+	assert.Equal(t, 3, capture.Count())
 }
 
 func TestMustAt(t *testing.T) {
@@ -318,6 +318,84 @@ func TestMustFirst(t *testing.T) {
 	assert.Panics(t, func() { MustFirst(emptySeq) })
 }
 
+func TestCapture(t *testing.T) {
+	seq := slices.Values([]string{"a", "b", "c"})
+	capture := NewCapture(seq)
+	result := slices.Collect(capture.Values())
+	assert.Equal(t, []string{"a", "b", "c"}, result)
+	assert.Equal(t, 3, capture.Count())
+	assert.Equal(t, "a", capture.FirstValue())
+	assert.Equal(t, "c", capture.LastValue())
+
+	emptyResult := slices.Collect(Take(0, capture.Values()))
+	assert.Empty(t, emptyResult)
+	assert.Zero(t, capture.Count())
+	assert.Panics(t, func() { capture.FirstValue() })
+	assert.Panics(t, func() { capture.LastValue() })
+
+	singleResult := slices.Collect(Take(1, capture.Values()))
+	assert.Equal(t, []string{"a"}, singleResult)
+	assert.Equal(t, 1, capture.Count())
+	assert.Equal(t, "a", capture.FirstValue())
+	assert.Equal(t, "a", capture.LastValue())
+}
+
+func TestCapture2Values(t *testing.T) {
+	seq := slices.All([]string{"a", "b", "c"})
+	capture := NewCapture2(seq)
+	result := slices.Collect(capture.Values())
+	assert.Equal(t, []string{"a", "b", "c"}, result)
+	assert.Equal(t, 3, capture.Count())
+	assert.Equal(t, 0, capture.FirstKey())
+	assert.Equal(t, "a", capture.FirstValue())
+	assert.Equal(t, 2, capture.LastKey())
+	assert.Equal(t, "c", capture.LastValue())
+
+	emptyResult := slices.Collect(Take(0, capture.Values()))
+	assert.Empty(t, emptyResult)
+	assert.Zero(t, capture.Count())
+	assert.Panics(t, func() { capture.FirstKey() })
+	assert.Panics(t, func() { capture.FirstValue() })
+	assert.Panics(t, func() { capture.LastKey() })
+	assert.Panics(t, func() { capture.LastValue() })
+
+	singleResult := slices.Collect(Take(1, capture.Values()))
+	assert.Equal(t, []string{"a"}, singleResult)
+	assert.Equal(t, 1, capture.Count())
+	assert.Equal(t, 0, capture.FirstKey())
+	assert.Equal(t, "a", capture.FirstValue())
+	assert.Equal(t, 0, capture.LastKey())
+	assert.Equal(t, "a", capture.LastValue())
+}
+
+func TestCapture2Keys(t *testing.T) {
+	seq := slices.All([]string{"a", "b", "c"})
+	capture := NewCapture2(seq)
+	result := slices.Collect(capture.Keys())
+	assert.Equal(t, []int{0, 1, 2}, result)
+	assert.Equal(t, 3, capture.Count())
+	assert.Equal(t, 0, capture.FirstKey())
+	assert.Equal(t, "a", capture.FirstValue())
+	assert.Equal(t, 2, capture.LastKey())
+	assert.Equal(t, "c", capture.LastValue())
+
+	emptyResult := slices.Collect(Take(0, capture.Keys()))
+	assert.Empty(t, emptyResult)
+	assert.Zero(t, capture.Count())
+	assert.Panics(t, func() { capture.FirstKey() })
+	assert.Panics(t, func() { capture.FirstValue() })
+	assert.Panics(t, func() { capture.LastKey() })
+	assert.Panics(t, func() { capture.LastValue() })
+
+	singleResult := slices.Collect(Take(1, capture.Keys()))
+	assert.Equal(t, []int{0}, singleResult)
+	assert.Equal(t, 1, capture.Count())
+	assert.Equal(t, 0, capture.FirstKey())
+	assert.Equal(t, "a", capture.FirstValue())
+	assert.Equal(t, 0, capture.LastKey())
+	assert.Equal(t, "a", capture.LastValue())
+}
+
 func firstNOf[T any](n int, seq iter.Seq[T]) []T {
 	if n <= 0 {
 		return slices.Collect(seq)
@@ -344,30 +422,6 @@ func misbehaved(s []int) iter.Seq[int] {
 	return func(yield func(x int) bool) {
 		for i := range s {
 			yield(s[i])
-		}
-	}
-}
-
-type countConsumed[T any] struct {
-	delegate iter.Seq[T]
-	count    int
-}
-
-func newCountConsumed[T any](delegate iter.Seq[T]) *countConsumed[T] {
-	return &countConsumed[T]{delegate: delegate}
-}
-
-func (c *countConsumed[T]) NumConsumed() int { return c.count }
-
-func (c *countConsumed[T]) Delegate() iter.Seq[T] {
-	c.count = 0
-	return func(yield func(T) bool) {
-		c.count = 0
-		for e := range c.delegate {
-			c.count++
-			if !yield(e) {
-				return
-			}
 		}
 	}
 }

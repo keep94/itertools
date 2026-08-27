@@ -230,6 +230,170 @@ func TakeWhile[T any](f Filterer[T], seq iter.Seq[T]) iter.Seq[T] {
 	}
 }
 
+// Capture wraps an iter.Seq in order to capture statistics on it.
+type Capture[V any] struct {
+	seq        iter.Seq[V]
+	firstValue V
+	lastValue  V
+	count      int
+}
+
+// NewCapture returns a Capture that wraps seq.
+func NewCapture[V any](seq iter.Seq[V]) *Capture[V] {
+	return &Capture[V]{seq: seq}
+}
+
+// Values resets the statistics and returns the values of the wrapped
+// iterator.
+func (c *Capture[V]) Values() iter.Seq[V] {
+	c.reset()
+	return func(yield func(value V) bool) {
+		c.reset()
+		for v := range c.seq {
+			c.update(v)
+			if !yield(v) {
+				return
+			}
+		}
+	}
+}
+
+// Count returns the number of values taken from the wrapped iterator.
+func (c *Capture[V]) Count() int {
+	return c.count
+}
+
+// FirstValue returns the first value taken from wrapped iterator.
+// FirstValue panics if Count() returns 0.
+func (c *Capture[V]) FirstValue() V {
+	c.checkNotEmpty()
+	return c.firstValue
+}
+
+// LastValue returns the last value taken from wrapped iterator.
+// LastValue panics if Count() returns 0.
+func (c *Capture[V]) LastValue() V {
+	c.checkNotEmpty()
+	return c.lastValue
+}
+
+func (c *Capture[V]) checkNotEmpty() {
+	if c.count == 0 {
+		panic("Capture empty")
+	}
+}
+
+func (c *Capture[V]) reset() {
+	c.count = 0
+}
+
+func (c *Capture[V]) update(v V) {
+	if c.count == 0 {
+		c.firstValue = v
+	}
+	c.lastValue = v
+	c.count++
+}
+
+// Capture2 wraps an iter.Seq2 in order to capture statistics on it.
+type Capture2[K, V any] struct {
+	seq        iter.Seq2[K, V]
+	firstValue V
+	lastValue  V
+	firstKey   K
+	lastKey    K
+	count      int
+}
+
+// NewCapture2 returns a Capture2 that wraps seq.
+func NewCapture2[K, V any](seq iter.Seq2[K, V]) *Capture2[K, V] {
+	return &Capture2[K, V]{seq: seq}
+}
+
+// Keys resets the statistics and returns just the keys of the wrapped
+// iterator.
+func (c *Capture2[K, V]) Keys() iter.Seq[K] {
+	c.reset()
+	return func(yield func(key K) bool) {
+		c.reset()
+		for k, v := range c.seq {
+			c.update(k, v)
+			if !yield(k) {
+				return
+			}
+		}
+	}
+}
+
+// Values resets the statistics and returns just the values of the wrapped
+// iterator.
+func (c *Capture2[K, V]) Values() iter.Seq[V] {
+	c.reset()
+	return func(yield func(value V) bool) {
+		c.reset()
+		for k, v := range c.seq {
+			c.update(k, v)
+			if !yield(v) {
+				return
+			}
+		}
+	}
+}
+
+// Count returns the number of key-value pairs taken from the wrapped
+// iterator.
+func (c *Capture2[K, V]) Count() int {
+	return c.count
+}
+
+// FirstKey returns the first key taken from wrapped iterator.
+// FirstKey panics if Count() returns 0.
+func (c *Capture2[K, V]) FirstKey() K {
+	c.checkNotEmpty()
+	return c.firstKey
+}
+
+// LastKey returns the last key taken from wrapped iterator.
+// LastKey panics if Count() returns 0.
+func (c *Capture2[K, V]) LastKey() K {
+	c.checkNotEmpty()
+	return c.lastKey
+}
+
+// FirstValue returns the first value taken from wrapped iterator.
+// FirstValue panics if Count() returns 0.
+func (c *Capture2[K, V]) FirstValue() V {
+	c.checkNotEmpty()
+	return c.firstValue
+}
+
+// LastValue returns the last value taken from wrapped iterator.
+// LastValue panics if Count() returns 0.
+func (c *Capture2[K, V]) LastValue() V {
+	c.checkNotEmpty()
+	return c.lastValue
+}
+
+func (c *Capture2[K, V]) checkNotEmpty() {
+	if c.count == 0 {
+		panic("Capture empty")
+	}
+}
+
+func (c *Capture2[K, V]) reset() {
+	c.count = 0
+}
+
+func (c *Capture2[K, V]) update(k K, v V) {
+	if c.count == 0 {
+		c.firstKey = k
+		c.firstValue = v
+	}
+	c.lastKey = k
+	c.lastValue = v
+	c.count++
+}
+
 func simpleCount(yield func(int) bool) {
 	for i := 0; ; i++ {
 		if !yield(i) {

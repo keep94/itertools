@@ -89,3 +89,17 @@ func ExampleTakeWhile() {
 	// 2
 	// 3
 }
+
+func ExampleCapture2() {
+	seq := slices.All([]string{"a", "b", "c", "d"})
+	capture := itertools.NewCapture2(seq)
+	fmt.Println(slices.Collect(itertools.Take(3, capture.Values())))
+	fmt.Println(capture.Count())
+	fmt.Println(capture.FirstKey(), capture.FirstValue())
+	fmt.Println(capture.LastKey(), capture.LastValue())
+	// Output:
+	// [a b c]
+	// 3
+	// 0 a
+	// 2 c
+}
